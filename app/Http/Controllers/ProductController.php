@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\ImageManipulation;
 use App\Http\Requests\Product\StoreRequest;
 use App\Http\Requests\Product\UpdateImageRequest;
 use App\Http\Requests\Product\UpdateRequest;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        protected ImageManipulation $images
+    ) {}
+
     /**
      * Display a listing of the resource.
      * Returns all products if user is admin, otherwise only user's products.
@@ -113,14 +118,11 @@ class ProductController extends Controller
 
         $file = $request->file('image');
 
-        // transform the image in webp format before saving it
+        $filename = $this->images->getProductImageName();
+        $disk->put($filename, $this->images->processProductImage($file));
 
-        $filename = uniqid('product_') . '.' . $file->getClientOriginalExtension();
-
-        $disk->putFileAs('products', $file, $filename);
-
-        $product->image_path = "products/{$filename}";
-        $product->image_url = Storage::url($product->image_path);
+        $product->image_path = $filename;
+        $product->image_url = url(Storage::url($product->image_path));
 
         $product->save();
 

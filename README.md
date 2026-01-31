@@ -50,7 +50,12 @@ A lightweight inventory management system API built with Laravel 11 and PHP 8.4.
    php artisan passport:install
    ```
 
-6. **Start the server:**
+6. **Create storage symbolic link:**
+   ```bash
+   php artisan storage:link
+   ```
+
+7. **Start the server:**
    ```bash
    php artisan serve
    ```
@@ -67,6 +72,7 @@ A lightweight inventory management system API built with Laravel 11 and PHP 8.4.
    docker-compose exec app php artisan key:generate
    docker-compose exec app php artisan migrate
    docker-compose exec app php artisan passport:install
+   docker-compose exec app php artisan storage:link
    ```
 
 The API will be available at `http://localhost:8000`.

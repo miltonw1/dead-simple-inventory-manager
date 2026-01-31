@@ -25,8 +25,31 @@ This file tracks improvements and new features based on user feedback.
     - **Description**: Create a dedicated sale entity that automatically manages inventory.
     - **Technical Details**:
         - **Model**: `Sale` (`product_id`, `quantity`, `unit_price`, `total_price`, `sold_at`).
-        - **Workflow**: `POST /api/products/{product}/sell` -> Create `Sale` record -> Trigger stock reduction.
+        - **Workflow**: `POST /api/bulk-operations/products` -> Create `Sale` record -> Trigger stock reduction.
         - **Automation**: Use an Observer or Service class to handle the decrement of `Product->stock` and validation of available inventory.
+
+        ```
+            `POST /api/bulk-operations/categories` -> {
+                operation: "increase percent price" | "increase fixed price" | "decrease percent price" | "decrease fixed price" | "decrease fixed stock"
+                targets: [
+                    { id: 123, amount: 1.1 }
+                ]
+            }
+            `POST /api/bulk-operations/products` -> {
+                operation: "set stock" | "set price" | "increase stock" | "increase price" | "decrease stock" | "decrease price"
+                targets: [
+                    { id: 1, amount: 10 },
+                    { id: 2, amount: 30 },
+                    { id: 3, amount: 30 },
+                    { id: 4, amount: 30 },
+                    { id: 5, amount: 30 },
+                    { id: 6, amount: 30 },
+                    { id: 7, amount: 30 },
+                ]
+            }
+
+        ```
+
 
 ## 🛡️ Audit & Traceability
 
@@ -52,10 +75,11 @@ This file tracks improvements and new features based on user feedback.
 
 ## 🖼️ Rich Content
 
-- [X] **Product Image**:
+- [ ] **Product Image**:
     - **Description**: Support for a single product image.
     - **Technical Details**:
         - **Controller**: Use `ProductController` to handle image operations.
         - **Endpoint**: `POST /api/products/{product}/image` for upload/update.
         - **Migration**: Add `image_path` column (nullable) to `products` table.
         - **Storage**: Only one image per product stored in `Storage`.
+        - **Process**: Convert and resize images before storing it.
