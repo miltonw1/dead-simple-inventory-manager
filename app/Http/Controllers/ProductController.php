@@ -8,13 +8,15 @@ use App\Http\Requests\Product\UpdateImageRequest;
 use App\Http\Requests\Product\UpdateRequest;
 use App\Http\Requests\Product\UpdateStockRequest;
 use App\Models\Product;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
     public function __construct(
-        protected ImageManipulation $images
+        protected ImageManipulation $images,
+        protected InventoryService $inventory
     ) {}
 
     /**
@@ -42,11 +44,20 @@ class ProductController extends Controller
     {
         $user = $request->user('api');
 
-        $product = new Product($request->validated());
+        $data = $request->validated();
+        $initialStock = $data['stock'] ?? 0;
+        unset($data['stock']);
+
+        $product = new Product($data);
+        $product->stock = 0; 
 
         $user->products()->save($product);
 
         $product->categories()->attach($request->get('categories'));
+
+        if ($initialStock > 0) {
+            $this->inventory->adjustStock($product, $initialStock, 'purchase', 'Initial stock');
+        }
 
         return $product;
     }
@@ -68,9 +79,17 @@ class ProductController extends Controller
      */
     public function update(UpdateRequest $request, Product $product): Product
     {
-        $product->update($request->validated());
+        $data = $request->validated();
+        $newStock = $data['stock'];
+        unset($data['stock']);
+
+        $product->update($data);
 
         $product->categories()->sync($request->get('categories'));
+
+        if ($newStock != $product->stock) {
+            $this->inventory->adjustStock($product, $newStock - $product->stock, 'adjustment', 'Manual update from profile');
+        }
 
         return $product;
     }
@@ -98,9 +117,12 @@ class ProductController extends Controller
     {
         $this->authorize('updateStock', $product);
 
-        $product->stock = $request->validated()['stock'];
+        $newStock = $request->validated()['stock'];
+        $diff = $newStock - $product->stock;
 
-        $product->save();
+        if ($diff != 0) {
+            $this->inventory->adjustStock($product, $diff, 'adjustment', 'Stock adjustment');
+        }
 
         return $product;
     }
