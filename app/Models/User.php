@@ -48,6 +48,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the brands for the user.
+     *
+     * @return HasMany<Brand, $this>
+     */
+    public function brands(): HasMany
+    {
+        return $this->hasMany(Brand::class);
+    }
+
+    /**
      * Get the suppliers for the user.
      *
      * @return HasMany<Supplier, $this>

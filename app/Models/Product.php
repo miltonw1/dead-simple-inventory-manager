@@ -30,6 +30,7 @@ class Product extends Model
         'storage_location_id',
         'user_id',
         'image_path',
+        'brand_id',
     ];
 
     /**
@@ -50,6 +51,16 @@ class Product extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * Get the brand for the product.
+     *
+     * @return BelongsTo<Brand, $this>
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
     }
 
     /**

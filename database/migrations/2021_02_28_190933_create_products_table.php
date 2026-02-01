@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Brand;
 use App\Models\StorageLocation;
 use App\Models\Supplier;
 use App\Models\User;
@@ -36,6 +37,11 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->foreignIdFor(StorageLocation::class)
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->foreignIdFor(Brand::class)
                 ->nullable()
                 ->constrained()
                 ->nullOnDelete();
