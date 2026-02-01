@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\Models\HasUserScope;
 use App\Traits\Models\UsesUuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -84,6 +85,14 @@ class Product extends Model
     }
 
     /**
+     * Scope a query to only include products with low stock.
+     */
+    public function scopeLowStock(Builder $query): void
+    {
+        $query->whereColumn('stock', '<=', 'min_stock_warning');
+    }
+
+    /**
      * Get the warning state for the product.
      */
     public function warning(): Attribute
@@ -96,46 +105,6 @@ class Product extends Model
 
                 return $stock <= $minStockWarning;
             }
-        );
-    }
-
-    /**
-     * Set the stock of the product.
-     */
-    public function stock(): Attribute
-    {
-        return Attribute::make(
-            set: fn (int $value) => [
-                'stock' => $value,
-                'last_stock_update' => now(),
-            ],
-        );
-    }
-
-    /**
-     * Set the price of the product.
-     */
-    public function price(): Attribute
-    {
-        return Attribute::make(
-            set: function (float $value) {
-                $attributes = $this->attributes ?? [];
-                $currentPrice = array_key_exists('price', $attributes)
-                    ? (float) $attributes['price']
-                    : null;
-
-                // Only update the last_price_update timestamp when the price value actually changes.
-                if ($currentPrice !== null && $currentPrice === (float) $value) {
-                    return [
-                        'price' => $value,
-                    ];
-                }
-
-                return [
-                    'price' => $value,
-                    'last_price_update' => now(),
-                ];
-            },
         );
     }
 }
