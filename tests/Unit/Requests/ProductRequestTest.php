@@ -6,8 +6,9 @@ test('rules keys', function () {
     $keys = array_keys((new StoreRequest)->rules());
     sort($keys);
 
-    expect($keys)->toHaveCount(10)
+    expect($keys)->toHaveCount(11)
         ->toEqual([
+            'brand_id',
             'categories',
             'categories.*',
             'code',
@@ -25,6 +26,7 @@ test('rules values', function () {
     $rules = (new StoreRequest)->rules();
 
     expect($rules)->toBeArray()
+        ->and($rules['brand_id'])->toEqual(['nullable', 'exists:brands,id'])
         ->and($rules['categories'])->toEqual(['array'])
         ->and($rules['categories.*'])->toEqual(['exists:categories,id'])
         ->and($rules['code'])->toEqual(['nullable'])
