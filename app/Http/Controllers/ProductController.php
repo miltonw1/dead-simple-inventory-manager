@@ -30,7 +30,7 @@ class ProductController extends Controller
         $user = $request->user('api');
 
         return Product::forUser($user)
-            ->with('supplier', 'categories', 'storageLocation')
+            ->with('brand', 'supplier', 'categories', 'storageLocation')
             ->orderBy('code')
             ->get();
     }
@@ -58,7 +58,7 @@ class ProductController extends Controller
     {
         $this->authorize('view', $product);
 
-        $product->load('supplier', 'categories', 'storageLocation');
+        $product->load('brand', 'supplier', 'categories', 'storageLocation');
 
         return $product;
     }

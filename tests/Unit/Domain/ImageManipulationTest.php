@@ -8,7 +8,7 @@ use Intervention\Image\Laravel\Facades\Image;
 
 describe('ImageManipulation', function () {
     beforeEach(function () {
-        $this->imageManipulation = new ImageManipulation();
+        $this->imageManipulation = new ImageManipulation;
     });
 
     describe('getProductImageName', function () {

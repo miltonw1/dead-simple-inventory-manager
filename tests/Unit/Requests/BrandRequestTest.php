@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Requests\Category\StoreRequest;
+use App\Http\Requests\Brand\StoreRequest;
 
 test('rules keys', function () {
     $keys = array_keys((new StoreRequest)->rules());

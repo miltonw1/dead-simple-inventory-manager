@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\ProductController;
@@ -28,6 +29,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::apiResources([
+        'brands' => BrandController::class,
         'categories' => CategoryController::class,
         'products' => ProductController::class,
         'suppliers' => SupplierController::class,

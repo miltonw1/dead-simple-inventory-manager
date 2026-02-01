@@ -11,8 +11,7 @@ class ImageManipulation
      * Process and resize a product image to a square format based on its smaller side,
      * with a maximum size of 480x480 pixels, and convert it to WebP format.
      *
-     * @param UploadedFile $file The uploaded product image file to be processed.
-     *
+     * @param  UploadedFile  $file  The uploaded product image file to be processed.
      * @return string The processed image as a WebP-encoded binary string.
      */
     public function processProductImage(UploadedFile $file): string
@@ -24,8 +23,6 @@ class ImageManipulation
 
         return $image
             ->cover($size, $size, 'center')
-
-
             ->toWebp(80)
             ->toString();
     }
@@ -43,7 +40,6 @@ class ImageManipulation
      * } $options Optional configuration for the generated filename:
      *     - `prefix`: String prefix used when generating the unique ID. Defaults to `"product_"`.
      *     - `path`: Directory path prepended to the filename. Defaults to `"products/"`.
-     *
      * @return string The generated product image filename (including path), ending with the `.webp` extension.
      */
     public function getProductImageName($options = []): string
@@ -51,6 +47,6 @@ class ImageManipulation
         $prefix = $options['prefix'] ?? 'product_';
         $path = $options['path'] ?? 'products/';
 
-        return $path . uniqid($prefix) . '.webp';
+        return $path.uniqid($prefix).'.webp';
     }
 }

@@ -31,6 +31,7 @@ class StoreRequest extends FormRequest
             'name' => ['required'],
             'price' => [$null, 'numeric'],
             'stock' => ['required', 'integer'],
+            'brand_id' => [$null, 'exists:brands,id'],
             'storage_location_id' => [$null, 'exists:storage_locations,id'],
             'supplier_id' => [$null, 'exists:suppliers,id'],
         ];

@@ -14,5 +14,5 @@ test('rules values', function () {
     $rules = (new StoreRequest)->rules();
 
     expect($rules)->toBeArray()
-        ->and($rules['name'])->toEqual(['required']);
+        ->and($rules['name'])->toEqual(['required', 'string', 'max:255']);
 });

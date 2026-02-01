@@ -4,7 +4,7 @@ This file tracks improvements and new features based on user feedback.
 
 ## 📦 New Entities
 
-- [ ] **Brand Management**:
+- [x] **Brand Management**:
     - **Description**: Add the ability to categorize products by brand for better filtering and reporting.
     - **Technical Details**:
         - **Model**: `Brand` using `UsesUuid` and `HasUserScope` traits.
@@ -75,7 +75,7 @@ This file tracks improvements and new features based on user feedback.
 
 ## 🖼️ Rich Content
 
-- [ ] **Product Image**:
+- [x] **Product Image**:
     - **Description**: Support for a single product image.
     - **Technical Details**:
         - **Controller**: Use `ProductController` to handle image operations.

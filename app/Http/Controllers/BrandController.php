@@ -7,7 +7,6 @@ use App\Http\Requests\Brand\UpdateRequest;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 
-
 class BrandController extends Controller
 {
     /**
@@ -25,7 +24,7 @@ class BrandController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreRequest $request)
+    public function store(StoreRequest $request): Brand
     {
         $user = $request->user('api');
 
@@ -39,7 +38,7 @@ class BrandController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Brand $brand)
+    public function show(Brand $brand): Brand
     {
         $this->authorize('view', $brand);
 
@@ -51,7 +50,7 @@ class BrandController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateRequest $request, Brand $brand)
+    public function update(UpdateRequest $request, Brand $brand): Brand
     {
         $brand->fill($request->validated())->save();
 
@@ -61,13 +60,12 @@ class BrandController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Brand $brand)
+    public function destroy(Brand $brand): Brand
     {
         $this->authorize('delete', $brand);
 
         $brand->delete();
 
         return $brand;
-
     }
 }

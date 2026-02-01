@@ -32,6 +32,7 @@ class UpdateRequest extends FormRequest
             'name' => ['required'],
             'price' => [$null, 'numeric'],
             'stock' => ['required', 'integer', 'min:0'],
+            'brand_id' => [$null, 'exists:brands,id'],
             'storage_location_id' => [$null, 'exists:storage_locations,id'],
             'supplier_id' => [$null, 'exists:suppliers,id'],
         ];
