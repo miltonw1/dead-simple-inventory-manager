@@ -4,7 +4,6 @@ namespace Tests\Feature\Inventory;
 
 use App\Models\Product;
 use App\Models\User;
-use App\Models\InventoryMovement;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -43,7 +42,7 @@ class InventoryFlowTest extends TestCase
     public function product_observer_updates_timestamps()
     {
         $product = Product::factory()->create(['price' => 100, 'stock' => 10]);
-        
+
         // Initial state: timestamps should be null or close to creation
         $this->assertNull($product->last_price_update);
         $this->assertNull($product->last_stock_update);
@@ -51,12 +50,12 @@ class InventoryFlowTest extends TestCase
         // 1. Update Price
         $product->update(['price' => 150]);
         $this->assertNotNull($product->fresh()->last_price_update);
-        
+
         // 2. Update Stock (Direct update to test observer, though we should use service usually)
         // We use fresh() to ensure we get the db state updated by observer
         $product = $product->fresh();
         $oldStockTimestamp = $product->last_stock_update;
-        
+
         $product->update(['stock' => 20]);
         $this->assertNotNull($product->fresh()->last_stock_update);
         $this->assertNotEquals($oldStockTimestamp, $product->fresh()->last_stock_update);
@@ -66,11 +65,10 @@ class InventoryFlowTest extends TestCase
     public function inventory_service_creates_movements_and_updates_stock()
     {
         $service = app(InventoryService::class);
-        $product = Product::factory()->create(['stock' => 10]);
+        $product = Product::factory()->create(['stock' => 10, 'user_id' => $this->user->id]);
 
         // 1. Perform adjustment
-        $service->adjustStock($product, 5, 'purchase', 'Restocking');
-
+        $service->adjustStock($this->user, $product, 5, 'purchase', 'Restocking');
         // 2. Verify Product Stock
         $this->assertEquals(15, $product->fresh()->stock);
 
@@ -81,7 +79,7 @@ class InventoryFlowTest extends TestCase
             'quantity' => 5,
             'previous_stock' => 10,
             'new_stock' => 15,
-            'notes' => 'Restocking'
+            'notes' => 'Restocking',
         ]);
     }
 
@@ -89,9 +87,9 @@ class InventoryFlowTest extends TestCase
     public function product_controller_store_creates_initial_movement()
     {
         $payload = Product::factory()->make(['stock' => 50])->toArray();
-        // make() doesn't give us the relations needed for validation sometimes, so we strip them or handle them if needed. 
-        // Factory make() provides raw attributes. 
-        
+        // make() doesn't give us the relations needed for validation sometimes, so we strip them or handle them if needed.
+        // Factory make() provides raw attributes.
+
         $response = $this->postJson(route('products.store'), $payload);
 
         $response->assertCreated();
@@ -106,7 +104,7 @@ class InventoryFlowTest extends TestCase
             'type' => 'purchase',
             'quantity' => 50,
             'new_stock' => 50,
-            'notes' => 'Initial stock'
+            'notes' => 'Initial stock',
         ]);
     }
 
@@ -114,7 +112,7 @@ class InventoryFlowTest extends TestCase
     public function product_controller_update_creates_adjustment_movement()
     {
         $product = Product::factory()->create(['stock' => 10, 'user_id' => $this->user->id]);
-        
+
         $payload = $product->toArray();
         $payload['stock'] = 15; // Change stock
         $payload['name'] = 'Updated Name';

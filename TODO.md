@@ -2,16 +2,6 @@
 
 This file tracks improvements and new features based on user feedback.
 
-## 📦 New Entities
-
-- [x] **Brand Management**:
-    - **Description**: Add the ability to categorize products by brand for better filtering and reporting.
-    - **Technical Details**:
-        - **Model**: `Brand` using `UsesUuid` and `HasUserScope` traits.
-        - **Migration**: Create `brands` table and add `brand_id` foreign key to `products` (nullable).
-        - **API**: Standard CRUD endpoints in `BrandController`.
-        - **Authorization**: `BrandPolicy` to ensure data isolation per user.
-
 ## 💰 Bulk Operations & Sales
 
 - [ ] **Bulk Price Adjustments**:
@@ -72,14 +62,3 @@ This file tracks improvements and new features based on user feedback.
 - [ ] **Quick Stock Reduction**:
     - **Description**: Dedicated endpoint for manual adjustments (e.g., damage or internal use).
     - **Technical Details**: `POST /api/products/{product}/reduce-stock` using `$product->decrement('stock', $amount)`.
-
-## 🖼️ Rich Content
-
-- [x] **Product Image**:
-    - **Description**: Support for a single product image.
-    - **Technical Details**:
-        - **Controller**: Use `ProductController` to handle image operations.
-        - **Endpoint**: `POST /api/products/{product}/image` for upload/update.
-        - **Migration**: Add `image_path` column (nullable) to `products` table.
-        - **Storage**: Only one image per product stored in `Storage`.
-        - **Process**: Convert and resize images before storing it.

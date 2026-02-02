@@ -1,124 +1,66 @@
 # Hoja de Ruta de Mejoras Técnicas: Dead Simple Inventory Manager
 
-Este documento detalla la estrategia técnica para evolucionar el sistema hacia una solución robusta y profesional. Las propuestas están ordenadas por su **facilidad de implementación**, permitiendo una mejora incremental del sistema.
+Este documento detalla la estrategia técnica para evolucionar el sistema hacia una solución robusta y profesional. Las propuestas están ordenadas por su **facilidad de implementación**, permitiendo una mejora incremental del sistema. La implementación prioriza paquetes convencionales como `spatie/laravel-activitylog` para logging global, permitiendo evolución incremental desde trazabilidad básica hacia auditoría completa.
 
 ---
 
-## 1. Rendimiento: SQL Scopes para "Bajo Stock"
-**Dificultad:** Muy Baja | **Prioridad:** Media | **Impacto:** Alto en escalabilidad.
+## 1. Trazabilidad Integrada
+**Dificultad:** Alta | **Prioridad:** Alta | **Impacto:** Trazabilidad
 
-### El Problema: Filtrado en Memoria (PHP)
-Actualmente, la lógica para identificar productos en estado de advertencia reside en un atributo calculado (`warning`) en el modelo `Product`. Esto obliga al servidor a realizar un `SELECT * FROM products`, instanciar miles de objetos en RAM y luego filtrarlos en PHP. Este enfoque colapsa con catálogos grandes.
-
-### La Solución: Filtrado en el Motor de Base de Datos
-Implementar un **Local Scope** en el modelo `Product` que traduzca esta lógica a una cláusula `WHERE` de SQL nativa.
-
-**Ubicación:** `app/Models/Product.php`
-
+#### A. Log de Actividad Macro (Operaciones Masivas) - LEGACY
+A diferencia del Kardex (que es micro), el sistema creará un `ActivityLog` (macro) para documentar la operación masiva completa.
 ```php
-use Illuminate\Database\Eloquent\Builder;
-
-/**
- * Filtra productos cuyo stock es menor o igual al límite de advertencia.
- */
-public function scopeLowStock(Builder $query): void {
-    // Genera SQL: WHERE products.stock <= products.min_stock_warning
-    $query->whereColumn('stock', '<=', 'min_stock_warning');
-}
+ActivityLog::create([
+    'user_id' => auth()->id(),
+    'action' => 'bulk_price_update',
+    'description' => "Aumento del 15% en categoría Electrónica",
+    'payload' => json_encode($request_parameters) 
+]);
 ```
 
-### Detalle Técnico y SQL Resultante
-Al invocar `Product::lowStock()->get()`, el motor de base de datos descarta los registros innecesarios antes de enviarlos a PHP.
-- **SQL Generado:** `SELECT * FROM products WHERE stock <= min_stock_warning;`
-- **Paginación:** Permite el uso de `Product::lowStock()->paginate(20)`, lo cual es imposible con atributos calculados en memoria.
+#### B. Sistema Global de ActivityLog
+**Dificultad:** Media | **Prioridad:** Alta | **Impacto:** Trazabilidad Completa
 
----
+Para una auditoría completa (no solo masivas), implementa `spatie/laravel-activitylog`, un paquete Laravel convencional que loggea automáticamente todas las acciones de usuarios en una tabla `activity_log`. Complementa el Kardex (InventoryMovement para cambios de stock) sin duplicación.
 
-## 2. Refactorización: Desacoplamiento con Observers
-**Dificultad:** Baja | **Prioridad:** Baja | **Impacto:** Alto en mantenibilidad.
+##### Instalación y Configuración
+- Instala el paquete: Ejecuta `composer require spatie/laravel-activitylog` en la terminal. Esto agrega el paquete a `composer.json` y registra su service provider automáticamente en Laravel.
+- Publica archivos: 
+  - `php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations"` para obtener la migración de la tabla `activity_log` (campos: id, log_name, description, subject_type/id, causer_type/id, properties [JSON con cambios], created_at/updated_at).
+  - Opcional: `php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-config"` para personalizar `config/activitylog.php` (e.g., habilitar/deshabilitar logging global, setear retención de logs a 365 días).
+- Migra: `php artisan migrate` crea la tabla. En `.env`, agrega `ACTIVITY_LOGGER_ENABLED=true` para activar.
 
-### El Problema: Modelos "Gordos" (Fat Models)
-El modelo `Product` utiliza Mutators (`Attribute::set`) para actualizar los campos `last_stock_update` y `last_price_update`. Esto mezcla la definición de la entidad con la lógica de auditoría, dificultando la escalabilidad y violando el principio de Responsabilidad Única.
+##### Configuración de Modelos
+- Agrega `use Spatie\Activitylog\Traits\CausesActivity;` al modelo `User` (app/Models/User.php). Esto permite rastrear actividades causadas por usuarios (e.g., `$user->actions` para consultar logs).
+- Para modelos a auditar (e.g., Product, Brand, Category), agrega `use Spatie\Activitylog\Traits\LogsActivity;` y el método `getActivitylogOptions()`:
+  ```php
+  use Spatie\Activitylog\LogOptions;
+  
+  public function getActivitylogOptions(): LogOptions
+  {
+      return LogOptions::defaults()
+          ->logOnly(['name', 'price', 'code'])  // Solo campos clave (excluye 'stock' para evitar duplicación con Kardex)
+          ->logOnlyDirty()  // Loggea solo cambios reales (no saves sin modificaciones)
+          ->dontSubmitEmptyLogs()  // Evita entradas vacías
+          ->setDescriptionForEvent(fn(string $eventName) => "Producto {$eventName} por {causer.name}");  // Descripción dinámica con placeholders (e.g., "Producto updated por Juan")
+  }
+  ```
+  - Técnicamente: `logOnlyDirty()` compara old/new valores; `dontSubmitEmptyLogs()` previene inserts innecesarios; placeholders como `{causer.name}` se resuelven automáticamente.
 
-### La Solución: Observador de Modelo
-Extraer la lógica de auditoría a una clase dedicada que escuche los eventos del ciclo de vida de Eloquent.
+##### Integración y Uso
+- **Logging Automático:** Al guardar modelos (e.g., en ProductController::update), el paquete loggea automáticamente via eventos (created/updated/deleted).
+- **Operaciones Masivas:** En BulkOperationController, envuelve en `LogBatch::startBatch(); ... LogBatch::endBatch();` para agrupar logs en un batch (reduce entradas individuales, mejora performance).
+- **Acciones No-Modelo:** Para logins/logout, usa `activity()->log('Usuario inició sesión')` en controladores.
+- **Consultas:** Usa `Activity::latest()->paginate()` para dashboards; filtra por `$user->actions`.
+- **Limpieza:** Programa `php artisan activitylog:clean` para borrar logs viejos.
 
-**1. Crear el Observador:** `app/Observers/ProductObserver.php`
-```php
-namespace App\Observers;
-use App\Models\Product;
+##### Trade-offs Técnicos
+- **Performance:** Agrega writes a DB por cada cambio; mitiga con `logOnlyDirty()` (solo loggea si hay diferencias) y deshabilita en imports (`activity()->disableLogging()`).
+- **Almacenamiento:** Tabla crece rápido; configura retención para evitar bloat.
+- **Seguridad:** No loggea datos sensibles (e.g., passwords); usa `dontLogIfAttributesChangedOnly(['password'])`.
+- **Beneficios:** Queryable (busca por usuario/fecha), JSON properties para diffs, integración con Laravel (auth auto-detecta causer).
 
-class ProductObserver {
-    public function updating(Product $product): void {
-        // isDirty() verifica cambios reales antes de persistir en DB
-        if ($product->isDirty('price')) {
-            $product->last_price_update = now();
-        }
-        if ($product->isDirty('stock')) {
-            $product->last_stock_update = now();
-        }
-    }
-}
-```
-
-**2. Registro en Laravel 12:** `app/Providers/AppServiceProvider.php`
-```php
-public function boot(): void {
-    \App\Models\Product::observe(\App\Observers\ProductObserver::class);
-}
-```
-
----
-
-## 3. Historial de Movimientos (Kardex / Audit Log)
-**Dificultad:** Media | **Prioridad:** Alta | **Impacto:** Crítico para integridad.
-
-### El Problema: Inmutabilidad y Trazabilidad
-El sistema actual sobrescribe el stock, borrando el estado anterior. Sin un log inmutable, es imposible realizar auditorías sobre pérdidas, robos o errores de entrada de mercancía.
-
-### La Solución: Registro de Movimientos Transaccional
-Crear una tabla de movimientos y un servicio que garantice que el stock nunca cambie sin un registro asociado.
-
-#### A. Esquema de Base de Datos
-```php
-Schema::create('inventory_movements', function (Blueprint $table) {
-    $table->uuid('id')->primary();
-    $table->foreignIdFor(Product::class)->constrained();
-    $table->foreignIdFor(User::class)->constrained();
-    $table->enum('type', ['purchase', 'sale', 'adjustment', 'return']);
-    $table->integer('quantity'); // El cambio aplicado (positivo o negativo)
-    $table->integer('previous_stock'); // Snapshot del stock antes del cambio
-    $table->integer('new_stock'); // Snapshot del stock después del cambio
-    $table->text('notes')->nullable();
-    $table->timestamps();
-    $table->index(['product_id', 'created_at']);
-});
-```
-
-#### B. Capa de Negocio (`InventoryService`)
-El servicio encapsula la lógica para asegurar transaccionalidad ACID.
-```php
-public function adjustStock(Product $product, int $diff, string $type, ?string $notes = null) {
-    return DB::transaction(function () use ($product, $diff, $type, $notes) {
-        // 1. Crear log inmutable
-        InventoryMovement::create([
-            'product_id' => $product->id,
-            'user_id' => auth()->id(),
-            'type' => $type,
-            'quantity' => $diff,
-            'previous_stock' => $product->stock,
-            'new_stock' => $product->stock + $diff,
-            'notes' => $notes,
-        ]);
-        // 2. Actualizar stock actual
-        return $product->increment('stock', $diff);
-    });
-}
-```
-
----
-
-## 4. Operaciones Masivas y Trazabilidad Integrada
+## 2. Operaciones Masivas
 **Dificultad:** Alta | **Prioridad:** Alta | **Impacto:** Máximo en eficiencia operativa.
 
 ### El Problema: Procesamiento Ineficiente
@@ -130,21 +72,4 @@ Implementar un controlador `BulkOperationController` que utilice procesamiento p
 #### A. Actualización Masiva de Precios
 Permite filtrar por marca, categoría o proveedor y aplicar reglas (Porcentaje o Monto Fijo).
 - **Técnica:** Uso de `chunkById(100)` para procesar de 100 en 100 productos, manteniendo el consumo de RAM constante.
-- **Flujo:** La actualización de cada producto disparará el `ProductObserver` (Propuesta #2), manteniendo los timestamps de auditoría al día automáticamente.
-
-#### B. Log de Actividad Global
-A diferencia del Kardex (que es micro), el sistema creará un `ActivityLog` (macro) para documentar la operación masiva completa.
-```php
-ActivityLog::create([
-    'user_id' => auth()->id(),
-    'action' => 'bulk_price_update',
-    'description' => "Aumento del 15% en categoría Electrónica",
-    'payload' => json_encode($request_parameters) 
-]);
-```
-
-### Resumen de Implementación
-1. **Validación:** Validar que el usuario tenga permisos sobre todos los productos seleccionados.
-2. **Transacción:** Envolver toda la operación en un `DB::transaction`.
-3. **Ejecución:** Iterar mediante trozos y aplicar la lógica matemática de ajuste.
-4. **Respuesta:** Devolver un resumen con la cantidad de productos afectados.
+- **Flujo:** La actualización de cada producto disparará el `ProductObserver` (Propuesta #2), manteniendo los timestamps de auditoría al día automáticamente. Además, integra con ActivityLog global: envuelve la actualización en `LogBatch` para logging por lotes (ver Sección 1.B).

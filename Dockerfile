@@ -8,9 +8,9 @@ WORKDIR /var/www
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    # build-essential \
-    # libfreetype6-dev \
-    # locales \
+    build-essential \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
     git \
     curl \
     zip \
@@ -26,8 +26,10 @@ RUN docker-php-ext-install pdo pdo_mysql pgsql pdo_pgsql
 
 # Install extensions
 RUN docker-php-ext-install mbstring zip exif pcntl bcmath
-# RUN docker-php-ext-configure gd --with-gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/
-# RUN docker-php-ext-install gd
+
+# Configure and install GD extension for image manipulation
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install -j$(nproc) gd
 
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

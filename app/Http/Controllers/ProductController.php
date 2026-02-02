@@ -49,14 +49,14 @@ class ProductController extends Controller
         unset($data['stock']);
 
         $product = new Product($data);
-        $product->stock = 0; 
+        $product->stock = 0;
 
         $user->products()->save($product);
 
         $product->categories()->attach($request->get('categories'));
 
         if ($initialStock > 0) {
-            $this->inventory->adjustStock($product, $initialStock, 'purchase', 'Initial stock');
+            $this->inventory->adjustStock($user, $product, $initialStock, 'purchase', 'Initial stock');
         }
 
         return $product;
@@ -79,6 +79,8 @@ class ProductController extends Controller
      */
     public function update(UpdateRequest $request, Product $product): Product
     {
+        $user = $request->user('api');
+
         $data = $request->validated();
         $newStock = $data['stock'];
         unset($data['stock']);
@@ -88,7 +90,7 @@ class ProductController extends Controller
         $product->categories()->sync($request->get('categories'));
 
         if ($newStock != $product->stock) {
-            $this->inventory->adjustStock($product, $newStock - $product->stock, 'adjustment', 'Manual update from profile');
+            $this->inventory->adjustStock($user, $product, $newStock - $product->stock, 'adjustment', 'Manual update from profile');
         }
 
         return $product;
@@ -115,13 +117,13 @@ class ProductController extends Controller
      */
     public function updateStock(UpdateStockRequest $request, Product $product): Product
     {
-        $this->authorize('updateStock', $product);
+        $user = $request->user('api');
 
         $newStock = $request->validated()['stock'];
         $diff = $newStock - $product->stock;
 
         if ($diff != 0) {
-            $this->inventory->adjustStock($product, $diff, 'adjustment', 'Stock adjustment');
+            $this->inventory->adjustStock($user, $product, $diff, 'adjustment', 'Stock adjustment');
         }
 
         return $product;
