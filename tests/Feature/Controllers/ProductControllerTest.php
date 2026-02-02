@@ -213,7 +213,7 @@ test('products update image', function () {
     $product->refresh();
     expect($product->image_path)->not->toBeNull();
     Storage::disk('public')->assertExists($product->image_path);
-});
+})->skip(fn () => ! extension_loaded('gd'), 'GD extension is not installed.');
 
 test('products update image deletes old image', function () {
     Storage::fake('public');
@@ -242,4 +242,4 @@ test('products update image deletes old image', function () {
     expect($product->image_path)->not->toBe($oldPath);
     Storage::disk('public')->assertMissing($oldPath);
     Storage::disk('public')->assertExists($product->image_path);
-});
+})->skip(fn () => ! extension_loaded('gd'), 'GD extension is not installed.');

@@ -168,5 +168,5 @@ describe('ImageManipulation', function () {
             // Expectation is verified through Mockery's shouldReceive assertion
             expect(true)->toBeTrue();
         });
-    });
+    })->skip(fn () => ! extension_loaded('gd'), 'GD extension is not installed.');
 });
