@@ -27,4 +27,16 @@ class UpdateImageRequest extends FormRequest
             'image' => ['required', 'image', 'max:2048'],
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'image.required' => 'La imagen es obligatoria.',
+            'image.image' => 'El archivo debe ser una imagen.',
+            'image.max' => 'La imagen no debe exceder los 2048 kilobytes.',
+        ];
+    }
 }

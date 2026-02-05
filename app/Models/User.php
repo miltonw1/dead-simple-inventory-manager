@@ -10,10 +10,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Passport\HasApiTokens;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\CausesActivity;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, UsesUuid;
+    use CausesActivity, HasApiTokens, HasFactory, LogsActivity, Notifiable, UsesUuid;
 
     /**
      * The attributes that are mass assignable.
@@ -36,6 +39,21 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logExcept(['password', 'remember_token'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(function (string $eventName) {
+                $causer = auth()->user();
+                $causerString = $causer ? "{$causer->name}({$causer->id})" : 'System';
+
+                return "User {$eventName} by {$causerString}";
+            });
+    }
 
     /**
      * Get the products for the user.

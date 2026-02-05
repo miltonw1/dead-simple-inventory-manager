@@ -28,4 +28,18 @@ class UpdateRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre es obligatorio.',
+            'name.string' => 'El nombre debe ser una cadena de texto.',
+            'name.max' => 'El nombre no debe exceder los 255 caracteres.',
+            'description.string' => 'La descripción debe ser una cadena de texto.',
+            'description.max' => 'La descripción no debe exceder los 1000 caracteres.',
+        ];
+    }
 }

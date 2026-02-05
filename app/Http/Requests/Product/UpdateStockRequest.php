@@ -25,4 +25,16 @@ class UpdateStockRequest extends FormRequest
             'stock' => ['required', 'integer', 'min:0'],
         ];
     }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'stock.required' => 'El stock es obligatorio.',
+            'stock.integer' => 'El stock debe ser un número entero.',
+            'stock.min' => 'El stock debe ser al menos 0.',
+        ];
+    }
 }

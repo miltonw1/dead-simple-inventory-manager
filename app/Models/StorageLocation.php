@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class StorageLocation extends Model
 {
     /** @use HasFactory<\Database\Factories\StorageLocationFactory> */
-    use HasFactory, HasUserScope, UsesUuid;
+    use HasFactory, HasUserScope, LogsActivity, UsesUuid;
 
     /**
      * The attributes that are mass assignable.
@@ -24,6 +26,20 @@ class StorageLocation extends Model
         'description',
         'user_id',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(function (string $eventName) {
+                $causer = auth()->user();
+                $causerString = $causer ? "{$causer->name}({$causer->id})" : 'System';
+
+                return "StorageLocation {$eventName} by {$causerString}";
+            });
+    }
 
     /**
      * Get the user that owns the storage location.

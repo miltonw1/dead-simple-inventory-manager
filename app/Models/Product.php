@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Product extends Model
 {
-    use HasFactory, HasUserScope, UsesUuid;
+    use HasFactory, HasUserScope, LogsActivity, UsesUuid;
 
     /**
      * The attributes that are mass assignable.
@@ -33,6 +35,21 @@ class Product extends Model
         'image_path',
         'brand_id',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logExcept(['stock', 'last_price_update', 'last_stock_update', 'updated_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(function (string $eventName) {
+                $causer = auth()->user();
+                $causerString = $causer ? "{$causer->name}({$causer->id})" : 'System';
+
+                return "Product {$eventName} by {$causerString}";
+            });
+    }
 
     /**
      * Get the categories for the product.

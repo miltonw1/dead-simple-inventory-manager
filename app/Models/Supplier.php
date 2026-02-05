@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Supplier extends Model
 {
-    use HasFactory, HasUserScope, UsesUuid;
+    use HasFactory, HasUserScope, LogsActivity, UsesUuid;
 
     /**
      * The attributes that are mass assignable.
@@ -26,6 +28,20 @@ class Supplier extends Model
         'web',
         'user_id',
     ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(function (string $eventName) {
+                $causer = auth()->user();
+                $causerString = $causer ? "{$causer->name}({$causer->id})" : 'System';
+
+                return "Supplier {$eventName} by {$causerString}";
+            });
+    }
 
     /**
      * Get the products for the supplier.
