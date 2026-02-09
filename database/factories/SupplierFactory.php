@@ -25,7 +25,7 @@ class SupplierFactory extends Factory
     {
         return [
             'uuid' => Str::uuid(),
-            'name' => $this->faker->name,
+            'name' => $this->faker->name(),
             'email' => $this->faker->safeEmail,
             'phone' => $this->faker->phoneNumber,
             'address' => $this->faker->streetAddress,

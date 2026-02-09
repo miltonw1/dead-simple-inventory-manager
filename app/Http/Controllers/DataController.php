@@ -11,9 +11,9 @@ class DataController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return array<string, mixed>
      */
-    public function index()
+    public function index(): array
     {
         $categories = Category::count();
         $products = Product::count();

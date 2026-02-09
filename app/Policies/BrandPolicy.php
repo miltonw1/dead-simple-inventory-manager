@@ -58,8 +58,16 @@ class BrandPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user): bool
+    public function forceDelete(User $user, Brand $brand): bool
     {
         return $user->is_admin;
+    }
+
+    /**
+     * Determine whether the user can perform a price update by brand.
+     */
+    public function updatePrice(User $user, Brand $brand): bool
+    {
+        return $user->is_admin || $brand->user_id === $user->id;
     }
 }

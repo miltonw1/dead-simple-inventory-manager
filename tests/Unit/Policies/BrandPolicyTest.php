@@ -83,9 +83,9 @@ test('user cannot restore brand', function () {
 
 // forceDelete tests
 test('admin can force delete brand', function () {
-    expect($this->policy->forceDelete($this->admin))->toBeTrue();
+    expect($this->policy->forceDelete($this->admin, $this->ownBrand))->toBeTrue();
 });
 
 test('user cannot force delete brand', function () {
-    expect($this->policy->forceDelete($this->user))->toBeFalse();
+    expect($this->policy->forceDelete($this->user, $this->ownBrand))->toBeFalse();
 });

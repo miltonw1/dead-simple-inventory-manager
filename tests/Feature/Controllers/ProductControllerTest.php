@@ -169,7 +169,39 @@ test('products delete', function () {
             'supplier_id',
         ]);
 
-    $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    $this->assertSoftDeleted('products', ['id' => $product->id]);
+});
+
+test('products soft delete excludes from queries', function () {
+    $this->seed(SupplierSeeder::class);
+
+    $product = Product::factory()->create([
+        'user_id' => $this->user->id,
+    ]);
+
+    $countBefore = Product::count();
+
+    $product->delete();
+
+    expect(Product::count())->toBe($countBefore - 1);
+    expect(Product::withTrashed()->count())->toBe($countBefore);
+});
+
+test('products restore soft deleted', function () {
+    $this->seed(SupplierSeeder::class);
+
+    $product = Product::factory()->create([
+        'user_id' => $this->user->id,
+    ]);
+
+    $product->delete();
+
+    expect(Product::withTrashed()->where('id', $product->id)->first()->trashed())->toBeTrue();
+
+    $product->restore();
+
+    expect(Product::find($product->id))->not->toBeNull();
+    expect(Product::find($product->id)->trashed())->toBeFalse();
 });
 
 test('products update stock', function () {

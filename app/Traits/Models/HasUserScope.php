@@ -12,9 +12,13 @@ trait HasUserScope
      * If user is admin, return all records.
      * Otherwise, return only user's records.
      */
-    public function scopeForUser(Builder $query, User $user): Builder
+    public function scopeForUser(Builder $query, User $user, bool $withTrashed = false): Builder
     {
         if ($user->is_admin) {
+            if ($withTrashed && method_exists($query, 'withTrashed')) {
+                return $query->withTrashed();
+            }
+
             return $query;
         }
 

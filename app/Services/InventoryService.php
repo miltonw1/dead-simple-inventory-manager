@@ -21,24 +21,32 @@ class InventoryService
     public function adjustStock(User $user, Product $product, int $quantity, string $type = 'adjustment', ?string $notes = null): Product
     {
         return DB::transaction(function () use ($user, $product, $quantity, $type, $notes) {
-            $previousStock = $product->stock;
-            $newStock = $previousStock + $quantity;
-
-            // Record the movement
-            InventoryMovement::create([
-                'product_id' => $product->id,
-                'user_id' => $user->id,
-                'type' => $type,
-                'quantity' => $quantity,
-                'previous_stock' => $previousStock,
-                'new_stock' => $newStock,
-                'notes' => $notes,
-            ]);
-
-            // Update product stock
-            $product->update(['stock' => $newStock]);
-
-            return $product;
+            return $this->leanAdjustStock($user, $product, $quantity, $type, $notes);
         });
+    }
+
+    /**
+     * Lean version of adjustStock without transaction management.
+     */
+    public function leanAdjustStock(User $user, Product $product, int $quantity, string $type = 'adjustment', ?string $notes = null): Product
+    {
+        $previousStock = $product->stock;
+        $newStock = $previousStock + $quantity;
+
+        // Record the movement
+        InventoryMovement::create([
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+            'type' => $type,
+            'quantity' => $quantity,
+            'previous_stock' => $previousStock,
+            'new_stock' => $newStock,
+            'notes' => $notes,
+        ]);
+
+        // Update product stock
+        $product->update(['stock' => $newStock]);
+
+        return $product;
     }
 }

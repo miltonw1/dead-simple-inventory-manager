@@ -6,22 +6,24 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Passport\Passport;
 use Tests\TestCase;
 
 class InventoryFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected User $user;
+
     protected function setUp(): void
     {
         parent::setUp();
         // Create a user and authenticate as we need user_id for movements
         $this->user = User::factory()->create();
-        $this->actingAs($this->user, 'api');
+        Passport::actingAs($this->user);
     }
 
-    /** @test */
-    public function scope_low_stock_filters_correctly()
+    public function test_scope_low_stock_filters_correctly()
     {
         // 1. Create products with different stock levels
         Product::factory()->create(['stock' => 10, 'min_stock_warning' => 20]); // Low stock
@@ -38,8 +40,7 @@ class InventoryFlowTest extends TestCase
         $this->assertFalse($lowStockProducts->contains(fn ($p) => $p->stock === 50));
     }
 
-    /** @test */
-    public function product_observer_updates_timestamps()
+    public function test_product_observer_updates_timestamps()
     {
         $product = Product::factory()->create(['price' => 100, 'stock' => 10]);
 
@@ -61,8 +62,7 @@ class InventoryFlowTest extends TestCase
         $this->assertNotEquals($oldStockTimestamp, $product->fresh()->last_stock_update);
     }
 
-    /** @test */
-    public function inventory_service_creates_movements_and_updates_stock()
+    public function test_inventory_service_creates_movements_and_updates_stock()
     {
         $service = app(InventoryService::class);
         $product = Product::factory()->create(['stock' => 10, 'user_id' => $this->user->id]);
@@ -83,8 +83,7 @@ class InventoryFlowTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function product_controller_store_creates_initial_movement()
+    public function test_product_controller_store_creates_initial_movement()
     {
         $payload = Product::factory()->make(['stock' => 50])->toArray();
         // make() doesn't give us the relations needed for validation sometimes, so we strip them or handle them if needed.
@@ -108,8 +107,7 @@ class InventoryFlowTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function product_controller_update_creates_adjustment_movement()
+    public function test_product_controller_update_creates_adjustment_movement()
     {
         $product = Product::factory()->create(['stock' => 10, 'user_id' => $this->user->id]);
 

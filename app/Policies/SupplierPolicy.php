@@ -58,8 +58,16 @@ class SupplierPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user): bool
+    public function forceDelete(User $user, Supplier $supplier): bool
     {
         return $user->is_admin;
+    }
+
+    /**
+     * Determine whether the user can perform a price update by supplier.
+     */
+    public function updatePrice(User $user, Supplier $supplier): bool
+    {
+        return $user->is_admin || $supplier->user_id === $user->id;
     }
 }
