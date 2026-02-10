@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Enums\PriceAdjustmentType;
 use App\Http\Requests\Bulk\PriceRequest;
 use App\Http\Requests\Bulk\StockRequest;
 use App\Models\Brand;
@@ -63,16 +64,16 @@ class BulkOperationController extends Controller
         ]);
     }
 
-    protected function makePriceOperation(User $user, array $productIds, string $type, float|int $value): int
+    protected function makePriceOperation(User $user, array $productIds, PriceAdjustmentType $type, float|int $value): int
     {
-        if ($type === 'price_percentage') {
+        if ($type === PriceAdjustmentType::PERCENTAGE) {
             return $this->price->percentualPriceTransformation(
                 $user,
                 $productIds,
                 $value
             );
         }
-        if ($type === 'price_fixed') {
+        if ($type === PriceAdjustmentType::FIXED) {
             return $this->price->fixedPriceTransformation(
                 $user,
                 $productIds,
@@ -93,7 +94,7 @@ class BulkOperationController extends Controller
 
         $values = $request->validated();
 
-        $affectedResources = $this->makePriceOperation($user, $productIds, $values['type'], $values['value']);
+        $affectedResources = $this->makePriceOperation($user, $productIds, PriceAdjustmentType::from($values['type']), $values['value']);
 
         return response()->json([
             'affected_resources' => $affectedResources,

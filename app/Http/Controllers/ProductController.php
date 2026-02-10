@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Enums\MovementType;
 use App\Http\Requests\Product\StoreRequest;
 use App\Http\Requests\Product\UpdateImageRequest;
 use App\Http\Requests\Product\UpdateRequest;
@@ -57,7 +58,7 @@ class ProductController extends Controller
         $product->categories()->attach($request->get('categories'));
 
         if ($initialStock > 0) {
-            $this->inventory->adjustStock($user, $product, $initialStock, 'purchase', 'Initial stock');
+            $this->inventory->adjustStock($user, $product, $initialStock, MovementType::PURCHASE, 'Initial stock');
         }
 
         return $product;
@@ -91,7 +92,7 @@ class ProductController extends Controller
         $product->categories()->sync($request->get('categories'));
 
         if ($newStock != $product->stock) {
-            $this->inventory->adjustStock($user, $product, $newStock - $product->stock, 'adjustment', 'Manual update from profile');
+            $this->inventory->adjustStock($user, $product, $newStock - $product->stock, MovementType::ADJUSTMENT, 'Manual update from profile');
         }
 
         return $product;
@@ -124,7 +125,7 @@ class ProductController extends Controller
         $diff = $newStock - $product->stock;
 
         if ($diff != 0) {
-            $this->inventory->adjustStock($user, $product, $diff, 'adjustment', 'Stock adjustment');
+            $this->inventory->adjustStock($user, $product, $diff, MovementType::ADJUSTMENT, 'Stock adjustment');
         }
 
         return $product;

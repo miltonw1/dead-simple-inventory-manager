@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Enums\MovementType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,13 @@ class InventoryMovement extends Model
         'new_stock',
         'notes',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'type' => MovementType::class,
+        ];
+    }
 
     /**
      * Get the product associated with the movement.

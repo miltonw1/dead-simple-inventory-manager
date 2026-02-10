@@ -132,7 +132,7 @@ class CreateAdminUser extends Command
             $this->newLine();
             $this->table(
                 ['ID', 'UUID', 'Name', 'Email', 'Role'],
-                [[$user->id, $user->uuid, $user->name, $user->email, $user->role]]
+                [[$user->id, $user->uuid, $user->name, $user->email, $user->role->value]]
             );
 
             return Command::SUCCESS;

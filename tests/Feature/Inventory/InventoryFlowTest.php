@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Inventory;
 
+use App\Domain\Enums\MovementType;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\InventoryService;
@@ -68,7 +69,7 @@ class InventoryFlowTest extends TestCase
         $product = Product::factory()->create(['stock' => 10, 'user_id' => $this->user->id]);
 
         // 1. Perform adjustment
-        $service->adjustStock($this->user, $product, 5, 'purchase', 'Restocking');
+        $service->adjustStock($this->user, $product, 5, MovementType::PURCHASE, 'Restocking');
         // 2. Verify Product Stock
         $this->assertEquals(15, $product->fresh()->stock);
 

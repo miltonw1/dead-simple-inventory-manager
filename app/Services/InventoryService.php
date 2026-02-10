@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Domain\Enums\MovementType;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\User;
@@ -15,10 +16,10 @@ class InventoryService
      * @param  User  $user  The user making the adjustment.
      * @param  Product  $product  The product to adjust.
      * @param  int  $quantity  The quantity to add (positive) or subtract (negative).
-     * @param  string  $type  The type of movement (purchase, sale, adjustment, return).
+     * @param  MovementType  $type  The type of movement.
      * @param  string|null  $notes  Optional notes for the movement.
      */
-    public function adjustStock(User $user, Product $product, int $quantity, string $type = 'adjustment', ?string $notes = null): Product
+    public function adjustStock(User $user, Product $product, int $quantity, MovementType $type = MovementType::ADJUSTMENT, ?string $notes = null): Product
     {
         return DB::transaction(function () use ($user, $product, $quantity, $type, $notes) {
             return $this->leanAdjustStock($user, $product, $quantity, $type, $notes);
@@ -28,7 +29,7 @@ class InventoryService
     /**
      * Lean version of adjustStock without transaction management.
      */
-    public function leanAdjustStock(User $user, Product $product, int $quantity, string $type = 'adjustment', ?string $notes = null): Product
+    public function leanAdjustStock(User $user, Product $product, int $quantity, MovementType $type = MovementType::ADJUSTMENT, ?string $notes = null): Product
     {
         $previousStock = $product->stock;
         $newStock = $previousStock + $quantity;

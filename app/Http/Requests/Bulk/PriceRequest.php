@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Bulk;
 
+use App\Domain\Enums\PriceAdjustmentType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PriceRequest extends FormRequest
 {
@@ -22,7 +24,7 @@ class PriceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', 'string', 'in:price_percentage,price_fixed'],
+            'type' => [Rule::enum(PriceAdjustmentType::class)],
             'value' => ['required', 'numeric'],
         ];
     }
@@ -34,8 +36,7 @@ class PriceRequest extends FormRequest
     {
         return [
             'type.required' => 'El campo tipo es obligatorio.',
-            'type.string' => 'El campo tipo debe ser una cadena.',
-            'type.in' => 'El campo tipo debe ser price_percentage o price_fixed.',
+            'type.enum' => 'El campo tipo debe ser price_percentage o price_fixed.',
             'value.required' => 'El campo valor es obligatorio.',
             'value.numeric' => 'El campo valor debe ser un número.',
         ];

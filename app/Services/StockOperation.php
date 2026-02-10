@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Domain\Enums\MovementType;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class StockOperation
                     $user,
                     $product,
                     $quantity,
-                    $type,
+                    MovementType::from($type),
                     'Inventory movement'
                 );
             }
