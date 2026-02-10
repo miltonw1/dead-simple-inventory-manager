@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
-use App\Domain\ImageManipulation;
 use App\Models\Product;
 use App\Observers\ProductObserver;
+use App\Services\ImageManipulation;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain;
+namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Intervention\Image\Laravel\Facades\Image;

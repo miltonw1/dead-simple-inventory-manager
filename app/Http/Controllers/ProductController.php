@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\ImageManipulation;
 use App\Http\Requests\Product\StoreRequest;
 use App\Http\Requests\Product\UpdateImageRequest;
 use App\Http\Requests\Product\UpdateRequest;
 use App\Http\Requests\Product\UpdateStockRequest;
 use App\Models\Product;
+use App\Services\ImageManipulation;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

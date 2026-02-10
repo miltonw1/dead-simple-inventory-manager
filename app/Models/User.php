@@ -127,14 +127,4 @@ class User extends Authenticatable
             get: fn () => $this->role === 'admin',
         );
     }
-
-    /**
-     * Set the user's password.
-     */
-    protected function password(): Attribute
-    {
-        return Attribute::make(
-            set: fn (string $value) => ['password' => Hash::make($value)],
-        );
-    }
 }

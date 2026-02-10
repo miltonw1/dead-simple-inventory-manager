@@ -1,6 +1,6 @@
 <?php
 
-use App\Domain\ImageManipulation;
+use App\Services\ImageManipulation;
 use Illuminate\Http\UploadedFile;
 use Intervention\Image\Interfaces\EncodedImageInterface;
 use Intervention\Image\Interfaces\ImageInterface;
