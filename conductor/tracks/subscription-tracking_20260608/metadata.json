@@ -1,0 +1,8 @@
+{
+  "track_id": "subscription-tracking_20260608",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-06-08T22:22:00Z",
+  "updated_at": "2026-06-08T22:22:00Z",
+  "description": "Implementar tracking de suscripciones mensuales, trimestrales o anuales, con administración de rangos de fecha, preparándolo para integrarse con Mercado Pago en el futuro mediante modificaciones en el modelo de datos y la base de datos."
+}
