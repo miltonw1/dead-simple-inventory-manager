@@ -7,6 +7,7 @@ use App\Http\Controllers\DataController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StorageLocationController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -29,24 +30,33 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/password', [ProfileController::class, 'updatePassword']);
     });
 
-    Route::apiResources([
-        'brands' => BrandController::class,
-        'categories' => CategoryController::class,
-        'products' => ProductController::class,
-        'suppliers' => SupplierController::class,
-        'storage-locations' => StorageLocationController::class,
-        'users' => UserController::class,
-    ]);
+    Route::get('/user/subscription', [SubscriptionController::class, 'index']);
+    Route::post('/admin/subscriptions', [SubscriptionController::class, 'store']);
 
-    Route::prefix('bulk-operations')->name('bulk-operations.')->group(function () {
-        Route::post('/stock', [BulkOperationController::class, 'updateStock']);
-        Route::post('/brands/{brand}', [BulkOperationController::class, 'byBrand'])->name('brand');
-        Route::post('/categories/{category}', [BulkOperationController::class, 'byCategory'])->name('category');
-        Route::post('/suppliers/{supplier}', [BulkOperationController::class, 'bySupplier'])->name('supplier');
+    Route::middleware('subscription.active')->group(function () {
+        Route::apiResources([
+            'brands' => BrandController::class,
+            'categories' => CategoryController::class,
+            'products' => ProductController::class,
+            'suppliers' => SupplierController::class,
+            'storage-locations' => StorageLocationController::class,
+        ]);
+
+        Route::prefix('bulk-operations')->name('bulk-operations.')->group(function () {
+            Route::post('/stock', [BulkOperationController::class, 'updateStock']);
+            Route::post('/brands/{brand}', [BulkOperationController::class, 'byBrand'])->name('brand');
+            Route::post('/categories/{category}', [BulkOperationController::class, 'byCategory'])->name('category');
+            Route::post('/suppliers/{supplier}', [BulkOperationController::class, 'bySupplier'])->name('supplier');
+        });
+
+        Route::put('/products/{product}/stock', [ProductController::class, 'updateStock']);
+        Route::post('/products/{product}/image', [ProductController::class, 'updateImage']);
     });
 
+    Route::apiResources([
+        'users' => UserController::class,
+    ]);
     Route::put('/users/{user}/password', [UserController::class, 'updatePassword']);
-    Route::put('/products/{product}/stock', [ProductController::class, 'updateStock']);
-    Route::post('/products/{product}/image', [ProductController::class, 'updateImage']);
+
     Route::get('/data', [DataController::class, 'index']);
 });

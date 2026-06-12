@@ -14,6 +14,10 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\CausesActivity;
 use Spatie\Activitylog\Traits\LogsActivity;
 
+/**
+ * @property \App\Domain\Enums\UserRole $role
+ * @property bool $is_admin
+ */
 class User extends Authenticatable
 {
     use CausesActivity, HasApiTokens, HasFactory, LogsActivity, Notifiable, UsesUuid;
@@ -106,6 +110,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the subscriptions for the user.
+     *
+     * @return HasMany<Subscription, $this>
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -127,5 +141,23 @@ class User extends Authenticatable
         return Attribute::make(
             get: fn () => $this->role === UserRole::ADMIN,
         );
+    }
+
+    /**
+     * Determine if the user has an active subscription.
+     */
+    public function hasActiveSubscription(): bool
+    {
+        if ($this->role === UserRole::ADMIN) {
+            return true;
+        }
+
+        $now = now();
+
+        return $this->subscriptions()
+            ->where('status', 'active')
+            ->where('starts_at', '<=', $now)
+            ->where('ends_at', '>=', $now)
+            ->exists();
     }
 }
