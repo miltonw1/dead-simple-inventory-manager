@@ -14,3 +14,4 @@ A lightweight inventory management system API built with Laravel 11 and PHP 8.4.
 - **Storage Locations**: Manage where your inventory is stored.
 - **API First**: Powered by Laravel Passport for secure API access.
 - **Auto Documentation**: Built-in API documentation using [Scramble](https://scramble.dedoc.co/).
+- **Subscription Tracking**: Manage subscription lifecycles (monthly, quarterly, yearly) and restrict inactive or expired accounts to read-only access on inventory resources.
