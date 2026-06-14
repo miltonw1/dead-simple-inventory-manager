@@ -19,8 +19,17 @@ class Subscription extends Model
     protected $fillable = [
         'user_id',
         'status',
+        'provider',
+        'provider_subscription_id',
+        'provider_payment_id',
+        'external_reference',
+        'plan',
+        'amount',
+        'currency',
+        'last_payment_status',
         'starts_at',
         'ends_at',
+        'cancelled_at',
     ];
 
     /**
@@ -31,8 +40,10 @@ class Subscription extends Model
     protected function casts(): array
     {
         return [
+            'amount' => 'decimal:2',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 

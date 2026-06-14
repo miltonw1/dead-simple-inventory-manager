@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SubscriptionCheckoutController;
 use App\Http\Controllers\StorageLocationController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SupplierController;
@@ -31,7 +32,9 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::get('/user/subscription', [SubscriptionController::class, 'index']);
+    Route::post('/subscription/checkout', [SubscriptionCheckoutController::class, 'store']);
     Route::post('/admin/subscriptions', [SubscriptionController::class, 'store']);
+    Route::patch('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'update']);
 
     Route::middleware('subscription.active')->group(function () {
         Route::apiResources([

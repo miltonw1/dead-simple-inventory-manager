@@ -90,6 +90,59 @@ test('non-admin cannot create subscription', function () {
         ->assertStatus(403);
 });
 
+test('admin can update subscription payment fields', function () {
+    $subscription = Subscription::factory()->create([
+        'user_id' => $this->normalUser->id,
+        'status' => 'active',
+    ]);
+
+    $data = [
+        'status' => 'cancelled',
+        'provider' => 'mercado_pago',
+        'provider_subscription_id' => 'preapproval-123',
+        'provider_payment_id' => 'payment-456',
+        'external_reference' => 'subscription-'.$subscription->uuid,
+        'plan' => 'monthly',
+        'amount' => 9990,
+        'currency' => 'ARS',
+        'last_payment_status' => 'approved',
+        'cancelled_at' => now()->toIso8601String(),
+    ];
+
+    $this->actingAs($this->adminUser, 'api')
+        ->patchJson("api/admin/subscriptions/{$subscription->uuid}", $data)
+        ->assertStatus(200)
+        ->assertJsonPath('status', 'cancelled')
+        ->assertJsonPath('provider', 'mercado_pago')
+        ->assertJsonPath('provider_subscription_id', 'preapproval-123')
+        ->assertJsonPath('plan', 'monthly');
+
+    $this->assertDatabaseHas('subscriptions', [
+        'id' => $subscription->id,
+        'status' => 'cancelled',
+        'provider' => 'mercado_pago',
+        'provider_subscription_id' => 'preapproval-123',
+        'provider_payment_id' => 'payment-456',
+        'external_reference' => 'subscription-'.$subscription->uuid,
+        'plan' => 'monthly',
+        'amount' => 9990,
+        'currency' => 'ARS',
+        'last_payment_status' => 'approved',
+    ]);
+});
+
+test('non-admin cannot update subscription', function () {
+    $subscription = Subscription::factory()->create([
+        'user_id' => $this->normalUser->id,
+    ]);
+
+    $this->actingAs($this->normalUser, 'api')
+        ->patchJson("api/admin/subscriptions/{$subscription->uuid}", [
+            'status' => 'cancelled',
+        ])
+        ->assertStatus(403);
+});
+
 test('user with active subscription can perform write operations on inventory', function () {
     Subscription::factory()->create([
         'user_id' => $this->normalUser->id,

@@ -27,6 +27,7 @@ class SubscriptionFactory extends Factory
             'uuid' => Str::uuid(),
             'user_id' => User::factory(),
             'status' => 'active',
+            'provider' => 'manual',
             'starts_at' => now(),
             'ends_at' => now()->addMonth(),
         ];

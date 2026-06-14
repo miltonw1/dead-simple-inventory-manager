@@ -30,4 +30,34 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'mercado_pago' => [
+        'access_token' => env('MERCADO_PAGO_ACCESS_TOKEN'),
+        'base_url' => env('MERCADO_PAGO_BASE_URL', 'https://api.mercadopago.com'),
+        'back_url' => env('MERCADO_PAGO_BACK_URL'),
+        'webhook_url' => env('MERCADO_PAGO_WEBHOOK_URL'),
+        'plans' => [
+            'monthly' => [
+                'label' => 'Monthly subscription',
+                'frequency' => 1,
+                'frequency_type' => 'months',
+                'amount' => (float) env('MERCADO_PAGO_MONTHLY_AMOUNT', 0),
+                'currency' => env('MERCADO_PAGO_CURRENCY', 'ARS'),
+            ],
+            'quarterly' => [
+                'label' => 'Quarterly subscription',
+                'frequency' => 3,
+                'frequency_type' => 'months',
+                'amount' => (float) env('MERCADO_PAGO_QUARTERLY_AMOUNT', 0),
+                'currency' => env('MERCADO_PAGO_CURRENCY', 'ARS'),
+            ],
+            'yearly' => [
+                'label' => 'Yearly subscription',
+                'frequency' => 12,
+                'frequency_type' => 'months',
+                'amount' => (float) env('MERCADO_PAGO_YEARLY_AMOUNT', 0),
+                'currency' => env('MERCADO_PAGO_CURRENCY', 'ARS'),
+            ],
+        ],
+    ],
+
 ];
