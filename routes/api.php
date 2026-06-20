@@ -62,4 +62,11 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/users/{user}/password', [UserController::class, 'updatePassword']);
 
     Route::get('/data', [DataController::class, 'index']);
+
+    Route::post('/webhooks/mercado-pago', function (Request $request) {
+    Log::info('MP WEBHOOK', $request->all());
+
+    return response()->json(['ok' => true]);
+});
+
 });
