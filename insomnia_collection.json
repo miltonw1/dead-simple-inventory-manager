@@ -1,0 +1,199 @@
+{
+	"_type": "export",
+	"__export_format": 4,
+	"__export_date": "2026-02-24T17:00:00.000Z",
+	"__export_source": "insomnia.desktop.app:v2023.5.8",
+	"resources": [
+		{
+			"_id": "wrk_1",
+			"parentId": null,
+			"modified": 1708794000000,
+			"created": 1708794000000,
+			"name": "Dead Simple Inventory Manager",
+			"description": "API Collection for Inventory Management",
+			"scope": "collection",
+			"_type": "workspace"
+		},
+		{
+			"_id": "env_1",
+			"parentId": "wrk_1",
+			"modified": 1708794000000,
+			"created": 1708794000000,
+			"name": "Base Environment",
+			"data": {
+				"base_url": "http://localhost:8000/api",
+				"token": "YOUR_ACCESS_TOKEN_HERE"
+			},
+			"dataPropertyOrder": {
+				"&": [
+					"base_url",
+					"token"
+				]
+			},
+			"color": null,
+			"isPrivate": false,
+			"metaSortKey": 1708794000000,
+			"_type": "environment"
+		},
+		{
+			"_id": "fld_auth",
+			"parentId": "wrk_1",
+			"name": "Authentication",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_login",
+			"parentId": "fld_auth",
+			"name": "Login (Passport)",
+			"method": "POST",
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n\t\"grant_type\": \"password\",\n\t\"client_id\": \"CLIENT_ID\",\n\t\"client_secret\": \"CLIENT_SECRET\",\n\t\"username\": \"admin@example.com\",\n\t\"password\": \"password\",\n\t\"scope\": \"\"\n}"
+			},
+			"url": "http://localhost:8000/oauth/token",
+			"_type": "request"
+		},
+		{
+			"_id": "fld_products",
+			"parentId": "wrk_1",
+			"name": "Products",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_products",
+			"parentId": "fld_products",
+			"name": "List Products",
+			"method": "GET",
+			"url": "{{ base_url }}/products",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "req_create_product",
+			"parentId": "fld_products",
+			"name": "Create Product",
+			"method": "POST",
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n\t\"name\": \"New Product\",\n\t\"sku\": \"PROD-001\",\n\t\"price\": 100,\n\t\"quantity\": 10,\n\t\"category_id\": 1,\n\t\"brand_id\": 1\n}"
+			},
+			"url": "{{ base_url }}/products",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "fld_brands",
+			"parentId": "wrk_1",
+			"name": "Brands",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_brands",
+			"parentId": "fld_brands",
+			"name": "List Brands",
+			"method": "GET",
+			"url": "{{ base_url }}/brands",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "fld_categories",
+			"parentId": "wrk_1",
+			"name": "Categories",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_categories",
+			"parentId": "fld_categories",
+			"name": "List Categories",
+			"method": "GET",
+			"url": "{{ base_url }}/categories",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "fld_suppliers",
+			"parentId": "wrk_1",
+			"name": "Suppliers",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_suppliers",
+			"parentId": "fld_suppliers",
+			"name": "List Suppliers",
+			"method": "GET",
+			"url": "{{ base_url }}/suppliers",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "fld_storage",
+			"parentId": "wrk_1",
+			"name": "Storage Locations",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_storage",
+			"parentId": "fld_storage",
+			"name": "List Locations",
+			"method": "GET",
+			"url": "{{ base_url }}/storage-locations",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "fld_profile",
+			"parentId": "wrk_1",
+			"name": "Profile",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_profile",
+			"parentId": "fld_profile",
+			"name": "Get Profile",
+			"method": "GET",
+			"url": "{{ base_url }}/profile",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		},
+		{
+			"_id": "fld_users",
+			"parentId": "wrk_1",
+			"name": "User Management",
+			"_type": "request_group"
+		},
+		{
+			"_id": "req_get_users",
+			"parentId": "fld_users",
+			"name": "List Users",
+			"method": "GET",
+			"url": "{{ base_url }}/users",
+			"authentication": {
+				"type": "bearer",
+				"token": "{{ token }}"
+			},
+			"_type": "request"
+		}
+	]
+}
