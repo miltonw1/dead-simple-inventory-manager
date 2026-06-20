@@ -12,6 +12,7 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,11 +63,54 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/users/{user}/password', [UserController::class, 'updatePassword']);
 
     Route::get('/data', [DataController::class, 'index']);
+});
 
-    Route::post('/webhooks/mercado-pago', function (Request $request) {
-    Log::info('MP WEBHOOK', $request->all());
+Route::post('/webhooks/mercado-pago', function (Request $request) {
+    Log::info('MP WEBHOOK RECEIVED', $request->all());
+
+    $data = $request->all();
+    $preapprovalId = $data['data']['id'] ?? $data['id'] ?? null;
+    $type = $data['type'] ?? $data['action'] ?? null;
+
+    // En Mercado Pago las notificaciones de suscripción pueden venir con type 'subscription_preapproval' o directo con la info de la suscripción
+    if ($preapprovalId) {
+        $subscription = \App\Models\Subscription::where('provider_subscription_id', $preapprovalId)
+            ->orWhere('external_reference', $preapprovalId)
+            ->first();
+
+        if ($subscription) {
+            // Obtenemos los detalles actuales desde Mercado Pago o mapeamos los del webhook
+            // Para asegurar la validez, normalmente se haría un GET a /preapproval/{id}
+            // Pero de forma directa, si la acción es de aprobación o si el webhook viene con status:
+            $status = $data['data']['status'] ?? $data['status'] ?? null;
+            
+            // Si viene el status "authorized" o "approved", activamos la suscripción
+            if (in_array($status, ['authorized', 'approved', 'active'])) {
+                $startsAt = now();
+                $endsAt = now();
+
+                // Calcular fecha de finalización según el plan de la suscripción
+                if ($subscription->plan === 'monthly') {
+                    $endsAt = $startsAt->copy()->addMonth();
+                } elseif ($subscription->plan === 'quarterly') {
+                    $endsAt = $startsAt->copy()->addMonths(3);
+                } elseif ($subscription->plan === 'yearly') {
+                    $endsAt = $startsAt->copy()->addYear();
+                }
+
+                $subscription->update([
+                    'status' => 'active',
+                    'last_payment_status' => 'approved',
+                    'starts_at' => $startsAt,
+                    'ends_at' => $endsAt,
+                ]);
+
+                Log::info("Subscription {$subscription->uuid} activated successfully via Webhook.");
+            }
+        }
+    }
 
     return response()->json(['ok' => true]);
 });
 
-});
+
