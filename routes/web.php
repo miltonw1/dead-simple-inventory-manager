@@ -37,22 +37,16 @@ Route::get('/subscription/return', function (Illuminate\Http\Request $request) {
         ]);
 
         if ($subscription && $subscription->status !== 'active') {
-            $startsAt = now();
-            $endsAt = now();
-
-            if ($subscription->plan === 'monthly') {
-                $endsAt = $startsAt->copy()->addMonth();
-            } elseif ($subscription->plan === 'quarterly') {
-                $endsAt = $startsAt->copy()->addMonths(3);
-            } elseif ($subscription->plan === 'yearly') {
-                $endsAt = $startsAt->copy()->addYear();
-            }
-
             $subscription->update([
                 'status' => 'active',
                 'last_payment_status' => 'approved',
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
+                'starts_at' => now(),
+                'ends_at' => match ($subscription->plan) {
+                    'monthly' => now()->addMonth(),
+                    'quarterly' => now()->addMonths(3),
+                    'yearly' => now()->addYear(),
+                    default => now()->addMonth(),
+                },
             ]);
             
             Log::info("Subscription {$subscription->uuid} activated successfully via Return URL.");
