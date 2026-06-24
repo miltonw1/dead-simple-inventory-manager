@@ -13,19 +13,21 @@ public function createPreapproval(Subscription $subscription): array
 {
     $plan = $this->plan($subscription->plan);
 
-    $response = $this->client()->post('/preapproval', [
-        'reason' => $plan['label'],
-        'external_reference' => $subscription->external_reference,
-        'payer_email' => 'test_user_1368433647093373060@testuser.com',
-        'back_url' => config('services.mercado_pago.back_url'),
-        'notification_url' => config('services.mercado_pago.webhook_url'),
-        'auto_recurring' => [
-            'frequency' => $plan['frequency'],
-            'frequency_type' => $plan['frequency_type'],
-            'transaction_amount' => (float) $plan['amount'],
-            'currency_id' => $plan['currency'],
-        ],
-    ]);
+        $response = $this->client()->post('/preapproval', [
+            'reason' => $plan['label'],
+            'external_reference' => $subscription->external_reference,
+            //'payer_email' => $subscription->user->email,
+            'payer_email' => 'test_user_1368433647093373060@testuser.com',
+            'back_url' => config('services.mercado_pago.back_url'),
+            'notification_url' => config('services.mercado_pago.webhook_url'),
+            'auto_recurring' => [
+                'frequency' => $plan['frequency'],
+                'frequency_type' => $plan['frequency_type'],
+                'transaction_amount' => (float) $plan['amount'],
+                'currency_id' => $plan['currency'],
+            ],
+            'status' => 'pending',
+        ]);
 
 
     return $response->json();
