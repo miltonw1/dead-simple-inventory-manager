@@ -16,8 +16,7 @@ public function createPreapproval(Subscription $subscription): array
         $response = $this->client()->post('/preapproval', [
             'reason' => $plan['label'],
             'external_reference' => $subscription->external_reference,
-            //'payer_email' => $subscription->user->email,
-            'payer_email' => 'test_user_1368433647093373060@testuser.com',
+            'payer_email' => config('services.mercado_pago.payer_email_override') ?? $subscription->user->email,
             'back_url' => config('services.mercado_pago.back_url'),
             'notification_url' => config('services.mercado_pago.webhook_url'),
             'auto_recurring' => [

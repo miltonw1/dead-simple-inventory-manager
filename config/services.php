@@ -58,6 +58,7 @@ return [
                 'currency' => env('MERCADO_PAGO_CURRENCY', 'ARS'),
             ],
         ],
+        'payer_email_override' => env('MERCADO_PAGO_PAYER_EMAIL_OVERRIDE'),
     ],
 
 ];
