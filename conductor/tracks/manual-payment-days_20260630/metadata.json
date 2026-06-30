@@ -1,0 +1,8 @@
+{
+  "track_id": "manual-payment-days_20260630",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-06-30T17:04:00Z",
+  "updated_at": "2026-06-30T17:04:00Z",
+  "description": "Crear el flujo para la compra de días fijos acumulativos mediante Preferencias de Pago Único de Mercado Pago, eliminando la recurrencia automática."
+}
