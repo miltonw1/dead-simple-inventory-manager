@@ -15,7 +15,8 @@ This file tracks the active development streams (tracks) for the project.
 
 ---
 
-- [ ] **Track: Crear el flujo para la compra de días fijos acumulativos mediante Preferencias de Pago Único de Mercado Pago, eliminando la recurrencia automática.**
+- [~] **Track: Crear el flujo para la compra de días fijos acumulativos mediante Preferencias de Pago Único de Mercado Pago, eliminando la recurrencia automática.**
 *Link: [./tracks/manual-payment-days_20260630/](./tracks/manual-payment-days_20260630/)*
+
 
 

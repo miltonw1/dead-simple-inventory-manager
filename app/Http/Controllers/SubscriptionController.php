@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Subscription;
+use App\Services\MercadoPagoService;
 use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    /**
-     * Retrieve the current user's active/latest subscription status.
-     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -18,10 +16,60 @@ class SubscriptionController extends Controller
             ->latest()
             ->first();
 
+        $daysRemaining = null;
+        if ($latestSubscription && $latestSubscription->ends_at) {
+            $now = now();
+            $daysRemaining = $latestSubscription->ends_at->greaterThan($now)
+                ? (int) $now->startOfDay()->diffInDays($latestSubscription->ends_at->startOfDay())
+                : 0;
+        }
+
         return response()->json([
             'has_active_subscription' => $user->hasActiveSubscription(),
             'subscription' => $latestSubscription,
+            'days_remaining' => $daysRemaining,
         ]);
+    }
+
+    public function verifyPending(Request $request)
+    {
+        $user = $request->user();
+
+        $latestSub = $user->subscriptions()->latest()->first();
+
+        if (! $latestSub) {
+            return response()->json(['verified' => false, 'message' => 'No subscription found.']);
+        }
+
+        if ($latestSub->status === 'active' || $user->hasActiveSubscription()) {
+            $daysRemaining = $latestSub->ends_at && $latestSub->ends_at->greaterThan(now())
+                ? (int) now()->startOfDay()->diffInDays($latestSub->ends_at->startOfDay())
+                : 0;
+
+            return response()->json([
+                'verified' => true,
+                'has_active_subscription' => true,
+                'subscription' => $latestSub,
+                'days_remaining' => $daysRemaining,
+            ]);
+        }
+
+        return response()->json(['verified' => false, 'message' => 'Payment still pending.']);
+    }
+
+    public function plans(MercadoPagoService $mercadoPago)
+    {
+        $plans = config('services.mercado_pago.plans', []);
+
+        return response()->json(array_map(function ($key, $plan) use ($mercadoPago) {
+            return [
+                'plan' => $key,
+                'label' => $plan['label'],
+                'amount' => (float) $plan['amount'],
+                'currency' => $plan['currency'] ?? 'ARS',
+                'days' => $plan['days'],
+            ];
+        }, array_keys($plans), $plans));
     }
 
     /**

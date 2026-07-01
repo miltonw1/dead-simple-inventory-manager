@@ -9,28 +9,53 @@ use RuntimeException;
 
 class MercadoPagoService
 {
-public function createPreapproval(Subscription $subscription): array
-{
-    $plan = $this->plan($subscription->plan);
+    public function createPaymentPreference(Subscription $subscription): array
+    {
+        $plan = $this->plan($subscription->plan);
 
-        $response = $this->client()->post('/preapproval', [
-            'reason' => $plan['label'],
-            'external_reference' => $subscription->external_reference,
-            'payer_email' => config('services.mercado_pago.payer_email_override') ?? $subscription->user->email,
-            'back_url' => config('services.mercado_pago.back_url'),
-            'notification_url' => config('services.mercado_pago.webhook_url'),
-            'auto_recurring' => [
-                'frequency' => $plan['frequency'],
-                'frequency_type' => $plan['frequency_type'],
-                'transaction_amount' => (float) $plan['amount'],
-                'currency_id' => $plan['currency'],
+        $response = $this->client()->post('/checkout/preferences', [
+            'items' => [
+                [
+                    'title' => $plan['label'] . ' - Dead Simple Inventory',
+                    'quantity' => 1,
+                    'unit_price' => (float) $plan['amount'],
+                    'currency_id' => $plan['currency'] ?? 'ARS',
+                ]
             ],
-            'status' => 'pending',
+            'external_reference' => $subscription->external_reference,
+            'payer' => [
+                'email' => config('services.mercado_pago.payer_email_override') ?? $subscription->user->email,
+            ],
+            'back_urls' => [
+                'success' => config('services.mercado_pago.back_url'),
+                'pending' => config('services.mercado_pago.back_url'),
+                'failure' => config('services.mercado_pago.back_url'),
+            ],
+            'notification_url' => config('services.mercado_pago.webhook_url'),
+            'auto_return' => 'approved',
         ]);
 
+        return $response->json();
+    }
 
-    return $response->json();
-}
+    public function getPayment(string $paymentId): array
+    {
+        $response = $this->client()->get("/v1/payments/{$paymentId}");
+
+        return $response->json();
+    }
+
+    public function searchPayments(string $externalReference): array
+    {
+        $response = $this->client()->get('/v1/payments/search', [
+            'external_reference' => $externalReference,
+            'sort' => 'date_created',
+            'criteria' => 'desc',
+        ]);
+
+        return $response->json('results', []);
+    }
+
 
     public function plan(string $plan): array
     {

@@ -18,6 +18,7 @@ test('retrieve subscription status for user with no subscription', function () {
         ->assertJson([
             'has_active_subscription' => false,
             'subscription' => null,
+            'days_remaining' => null,
         ]);
 });
 
@@ -35,7 +36,8 @@ test('retrieve subscription status for user with active subscription', function 
         ->assertJson([
             'has_active_subscription' => true,
         ])
-        ->assertJsonPath('subscription.uuid', (string) $subscription->uuid);
+        ->assertJsonPath('subscription.uuid', (string) $subscription->uuid)
+        ->assertJsonPath('days_remaining', fn ($val) => $val > 0);
 });
 
 test('retrieve subscription status for user with expired subscription', function () {
@@ -49,7 +51,8 @@ test('retrieve subscription status for user with expired subscription', function
         ->assertJson([
             'has_active_subscription' => false,
         ])
-        ->assertJsonPath('subscription.uuid', (string) $subscription->uuid);
+        ->assertJsonPath('subscription.uuid', (string) $subscription->uuid)
+        ->assertJsonPath('days_remaining', 0);
 });
 
 test('admin can create subscription', function () {

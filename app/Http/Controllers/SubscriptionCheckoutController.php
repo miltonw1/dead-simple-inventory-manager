@@ -9,9 +9,6 @@ use RuntimeException;
 
 class SubscriptionCheckoutController extends Controller
 {
-    /**
-     * Create a Mercado Pago preapproval checkout for the authenticated user.
-     */
     public function store(Request $request, MercadoPagoService $mercadoPago)
     {
         $validated = $request->validate([
@@ -44,7 +41,7 @@ class SubscriptionCheckoutController extends Controller
         $subscription->load('user');
 
         try {
-            $preapproval = $mercadoPago->createPreapproval($subscription);
+            $preference = $mercadoPago->createPaymentPreference($subscription);
         } catch (RuntimeException $exception) {
             return response()->json([
                 'message' => $exception->getMessage(),
@@ -52,13 +49,14 @@ class SubscriptionCheckoutController extends Controller
         }
 
         $subscription->fill([
-            'provider_subscription_id' => $preapproval['id'] ?? null,
-            'last_payment_status' => $preapproval['status'] ?? null,
+            'provider_subscription_id' => $preference['id'] ?? null,
+            'last_payment_status' => 'pending',
         ])->save();
 
         return response()->json([
-            'checkout_url' => $preapproval['init_point'] ?? $preapproval['sandbox_init_point'] ?? null,
+            'checkout_url' => $preference['init_point'] ?? $preference['sandbox_init_point'] ?? null,
             'subscription' => $subscription,
         ], 201);
+
     }
 }

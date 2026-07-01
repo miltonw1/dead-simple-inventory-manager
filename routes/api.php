@@ -33,6 +33,8 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::get('/user/subscription', [SubscriptionController::class, 'index']);
+    Route::post('/subscription/verify-pending', [SubscriptionController::class, 'verifyPending']);
+    Route::get('/plans', [SubscriptionController::class, 'plans']);
     Route::post('/subscription/checkout', [SubscriptionCheckoutController::class, 'store']);
     Route::post('/admin/subscriptions', [SubscriptionController::class, 'store']);
     Route::patch('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'update']);
@@ -65,71 +67,97 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/data', [DataController::class, 'index']);
 });
 
-Route::post('/webhooks/mercado-pago', function (Request $request) {
+Route::post('/webhooks/mercado-pago', function (\Illuminate\Http\Request $request) {
     Log::info('MP WEBHOOK RECEIVED', $request->all());
 
     $data = $request->all();
-    $action = $data['type'] ?? $data['action'] ?? '';
-    $isRenewal = $action === 'subscription_authorized_payment';
 
-    // Buscar la suscripción por diferentes IDs que puede enviar Mercado Pago
-    $candidateIds = array_filter([
-        $data['data']['preapproval_id'] ?? null,
-        $data['data']['id'] ?? null,
-        $data['id'] ?? null,
-    ]);
+    $topic = $request->query('topic') ?? $data['topic'] ?? $data['type'] ?? '';
+    $paymentId = $request->query('id') ?? $data['data']['id'] ?? $data['id'] ?? '';
 
-    $subscription = null;
-    foreach ($candidateIds as $id) {
-        $subscription = \App\Models\Subscription::where('provider_subscription_id', $id)->first();
-        if ($subscription) {
-            break;
-        }
+    if ($topic !== 'payment' || ! $paymentId) {
+        Log::warning('MP WEBHOOK: Unhandled topic or missing payment ID', [
+            'topic' => $topic,
+            'paymentId' => $paymentId,
+        ]);
+
+        return response()->json(['ok' => true]);
     }
+
+    $mercadoPago = app(\App\Services\MercadoPagoService::class);
+
+    try {
+        $payment = $mercadoPago->getPayment($paymentId);
+    } catch (\RuntimeException $e) {
+        Log::error('MP WEBHOOK: Failed to fetch payment', [
+            'paymentId' => $paymentId,
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    $externalReference = $payment['external_reference'] ?? null;
+    $paymentStatus = $payment['status'] ?? null;
+
+    if (! $externalReference) {
+        Log::warning('MP WEBHOOK: Payment has no external_reference', ['paymentId' => $paymentId]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    $subscription = \App\Models\Subscription::where('external_reference', $externalReference)->first();
 
     if (! $subscription) {
-        Log::warning('MP WEBHOOK: No subscription found', ['candidateIds' => $candidateIds]);
+        Log::warning('MP WEBHOOK: No subscription found', [
+            'external_reference' => $externalReference,
+        ]);
+
         return response()->json(['ok' => true]);
     }
 
-    $status = $data['data']['status'] ?? $data['status'] ?? null;
-    $paymentId = $data['data']['id'] ?? null;
+    if ($paymentStatus !== 'approved') {
+        $subscription->update(['last_payment_status' => $paymentStatus]);
 
-    if (! in_array($status, ['authorized', 'approved', 'active'])) {
+        Log::info("MP WEBHOOK: Payment not approved, skipping", [
+            'status' => $paymentStatus,
+            'uuid' => $subscription->uuid,
+        ]);
+
         return response()->json(['ok' => true]);
     }
 
-    if ($isRenewal) {
-        // Pago recurrente: extender ends_at desde su valor actual
-        $subscription->update([
-            'last_payment_status' => 'approved',
-            'provider_payment_id' => $paymentId,
-            'ends_at' => match ($subscription->plan) {
-                'monthly' => $subscription->ends_at->copy()->addMonth(),
-                'quarterly' => $subscription->ends_at->copy()->addMonths(3),
-                'yearly' => $subscription->ends_at->copy()->addYear(),
-                default => $subscription->ends_at->copy()->addMonth(),
-            },
-        ]);
+    $plan = $mercadoPago->plan($subscription->plan);
+    $planDays = $plan['days'];
 
-        Log::info("Subscription {$subscription->uuid} extended via Webhook renewal.");
-    } elseif ($subscription->status !== 'active') {
-        // Primera activación: establecer fechas desde ahora
-        $subscription->update([
-            'status' => 'active',
-            'last_payment_status' => 'approved',
-            'provider_payment_id' => $paymentId,
-            'starts_at' => now(),
-            'ends_at' => match ($subscription->plan) {
-                'monthly' => now()->addMonth(),
-                'quarterly' => now()->addMonths(3),
-                'yearly' => now()->addYear(),
-                default => now()->addMonth(),
-            },
-        ]);
+    $now = now();
 
-        Log::info("Subscription {$subscription->uuid} activated via Webhook.");
+    $activeSub = $subscription->user->subscriptions()
+        ->where('status', 'active')
+        ->where('ends_at', '>=', $now)
+        ->latest('ends_at')
+        ->first();
+
+    if ($activeSub && $activeSub->ends_at && $activeSub->ends_at->isFuture()) {
+        $newEndsAt = $activeSub->ends_at->copy()->addDays($planDays);
+        $activeSub->fill(['ends_at' => $newEndsAt])->save();
+    } else {
+        $newEndsAt = $now->copy()->addDays($planDays);
     }
+
+    $subscription->fill([
+        'status' => 'active',
+        'last_payment_status' => 'approved',
+        'provider_payment_id' => $paymentId,
+        'starts_at' => $now,
+        'ends_at' => $newEndsAt,
+    ])->save();
+
+    Log::info("Subscription {$subscription->uuid} activated via Webhook payment.", [
+        'new_ends_at' => $newEndsAt->toDateTimeString(),
+        'days_added' => $planDays,
+        'accumulated' => $activeSub && $activeSub->ends_at && $activeSub->ends_at->isFuture(),
+    ]);
 
     return response()->json(['ok' => true]);
 });
